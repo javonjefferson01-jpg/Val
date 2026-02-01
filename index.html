@@ -1,0 +1,200 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Jasmine, will you be my Valentine?</title>
+  <style>
+    :root {
+      --bg: #fff0f5;
+      --accent: #ff6b9a;
+      --accent-dark: #e0507b;
+      --text: #3b2d2d;
+    }
+
+    html,body {
+      height: 100%;
+      margin: 0;
+      font-family: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial;
+      background: radial-gradient(circle at 10% 10%, #fff7fb, var(--bg));
+      color: var(--text);
+    }
+
+    .stage {
+      position: relative;
+      width: 100%;
+      height: 100%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      overflow: hidden;
+    }
+
+    .card {
+      background: white;
+      border-radius: 16px;
+      padding: 36px;
+      box-shadow: 0 8px 30px rgba(0,0,0,0.08);
+      text-align: center;
+      max-width: 640px;
+      width: calc(100% - 40px);
+    }
+
+    h1 {
+      margin: 0 0 18px 0;
+      font-size: 1.8rem;
+      color: var(--accent-dark);
+    }
+
+    p.lead {
+      margin: 0 0 26px 0;
+      color: #6b4b56;
+    }
+
+    .btn-area {
+      position: relative;
+      height: 120px; /* area where the buttons can appear */
+    }
+
+    button {
+      -webkit-tap-highlight-color: transparent;
+      border: none;
+      cursor: pointer;
+      font-weight: 600;
+      padding: 12px 22px;
+      border-radius: 999px;
+      font-size: 1rem;
+      transition: transform .12s ease, box-shadow .12s ease;
+      box-shadow: 0 6px 18px rgba(120,40,80,0.08);
+      position: absolute;
+      user-select: none;
+    }
+
+    button:active { transform: translateY(2px); }
+
+    #yes {
+      background: linear-gradient(180deg, var(--accent) 0%, var(--accent-dark) 100%);
+      color: white;
+      left: calc(50% - 140px);
+      top: calc(50% - 22px);
+    }
+
+    #no {
+      background: white;
+      color: var(--accent-dark);
+      border: 2px solid var(--accent);
+      left: calc(50% + 40px);
+      top: calc(50% - 22px);
+    }
+
+    .note {
+      margin-top: 18px;
+      font-size: 0.9rem;
+      color: #9a6f7f;
+    }
+
+    @media (max-width:480px) {
+      .card { padding: 22px; }
+      .btn-area { height: 160px; }
+      #yes { left: calc(50% - 110px); }
+      #no { left: calc(50% + 20px); }
+    }
+  </style>
+</head>
+<body>
+  <div class="stage">
+    <div class="card" role="main" aria-labelledby="title">
+      <h1 id="title">Jasmine, will you be my Valentine?</h1>
+      <p class="lead">Pick one:</p>
+
+      <div class="btn-area" id="area" aria-hidden="false">
+        <button id="yes" type="button">Yes</button>
+        <button id="no" type="button" aria-hidden="true" tabindex="-1">No</button>
+      </div>
+
+      <p class="note">(Try clicking "no" if you dare…)</p>
+    </div>
+  </div>
+
+  <script>
+    (function () {
+      const noBtn = document.getElementById('no');
+      const yesBtn = document.getElementById('yes');
+      const area = document.getElementById('area');
+
+      // Make the "no" button evade cursor by jumping to a random place inside the viewport
+      function moveNoButton() {
+        const padding = 12; // keep some space from edges
+        const vw = window.innerWidth;
+        const vh = window.innerHeight;
+
+        // measure button width/height (it may change with text size / zoom)
+        const rect = noBtn.getBoundingClientRect();
+        const btnW = rect.width;
+        const btnH = rect.height;
+
+        // compute available bounds
+        const minX = padding;
+        const minY = padding;
+        const maxX = Math.max(padding, vw - btnW - padding);
+        const maxY = Math.max(padding, vh - btnH - padding);
+
+        // pick a spot that isn't too close to current to feel jumpy
+        let x = Math.floor(Math.random() * (maxX - minX + 1)) + minX;
+        let y = Math.floor(Math.random() * (maxY - minY + 1)) + minY;
+
+        // apply transform via fixed positioning relative to viewport
+        noBtn.style.position = 'fixed';
+        noBtn.style.left = x + 'px';
+        noBtn.style.top = y + 'px';
+      }
+
+      // Attach events that make the button flee immediately:
+      // mouseenter / mouseover / mousedown (prevents click) / touchstart (mobile)
+      ['mouseenter', 'mouseover', 'mousemove'].forEach(ev =>
+        noBtn.addEventListener(ev, moveNoButton)
+      );
+
+      // If user tries to press (mouse down or touch), jump and prevent the click
+      function blockAndMove(e) {
+        e.preventDefault();
+        moveNoButton();
+      }
+      noBtn.addEventListener('mousedown', blockAndMove);
+      noBtn.addEventListener('touchstart', blockAndMove, {passive:false});
+
+      // Also intercept clicks just in case
+      noBtn.addEventListener('click', function (e) {
+        e.preventDefault();
+        moveNoButton();
+      });
+
+      // Allow "yes" to do something nice
+      yesBtn.addEventListener('click', function () {
+        // replace content with a positive message
+        const card = document.querySelector('.card');
+        card.innerHTML = `
+          <h1>Yes! 💖</h1>
+          <p class="lead">Congrats! You won a trip to Disney! </p>
+          <p class="note">Refresh to ask again.</p>
+        `;
+      });
+
+      // Ensure the "no" button isn't focusable via keyboard (keeps it inaccessible)
+      noBtn.setAttribute('tabindex', '-1');
+
+      // On resize, ensure the button stays in-bounds
+      window.addEventListener('resize', () => {
+        // if fixed position is set, ensure it's not offscreen after resize
+        const rect = noBtn.getBoundingClientRect();
+        if (rect.right > window.innerWidth - 8 || rect.bottom > window.innerHeight - 8) {
+          moveNoButton();
+        }
+      });
+
+      // Initial small nudge so it isn't perfectly aligned with "yes"
+      setTimeout(moveNoButton, 350);
+    })();
+  </script>
+</body>
+</html>

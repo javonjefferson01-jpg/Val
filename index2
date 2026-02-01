@@ -1,0 +1,108 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Jasmine, will you be my Valentine?</title>
+  <style>
+    :root{ --bg:#fff0f5; --accent:#ff6b9a; --accent-dark:#e0507b; --text:#3b2d2d; }
+    html,body{height:100%;margin:0;font-family:system-ui,-apple-system,"Segoe UI",Roboto,Arial;background:radial-gradient(circle at 10% 10%,#fff7fb,var(--bg));color:var(--text)}
+    .stage{display:flex;align-items:center;justify-content:center;height:100%;padding:20px;box-sizing:border-box}
+    .card{background:#fff;border-radius:14px;padding:28px;max-width:760px;width:100%;text-align:center;box-shadow:0 8px 30px rgba(0,0,0,.08)}
+    h1{color:var(--accent-dark);margin:0 0 12px 0}
+    .lead{color:#6b4b56;margin:0 0 18px}
+    .btn-area{position:relative;height:120px}
+    button{cursor:pointer;border:none;padding:12px 20px;border-radius:999px;font-weight:700;position:absolute;user-select:none;box-shadow:0 6px 18px rgba(120,40,80,.06)}
+    #yes{background:linear-gradient(180deg,var(--accent),var(--accent-dark));color:#fff;left:calc(50% - 140px);top:calc(50% - 22px)}
+    #no{background:#fff;color:var(--accent-dark);border:2px solid var(--accent);left:calc(50% + 40px);top:calc(50% - 22px)}
+    .note{margin-top:16px;color:#9a6f7f}
+    .video-wrap{display:flex;flex-direction:column;gap:12px;align-items:center;margin-top:12px}
+    video{max-width:100%;border-radius:12px;box-shadow:0 10px 30px rgba(0,0,0,.08)}
+    .choose-btn{background:#fff;color:var(--accent-dark);border:2px solid var(--accent);padding:8px 12px;border-radius:8px;cursor:pointer;font-weight:600}
+    @media (max-width:480px){#yes{left:calc(50% - 110px)}#no{left:calc(50% + 20px)}}
+  </style>
+</head>
+<body>
+  <div class="stage">
+    <div class="card" role="main" aria-labelledby="title">
+      <h1 id="title">Jasmine, will you be my Valentine?</h1>
+      <p class="lead">Pick one:</p>
+
+      <div class="btn-area" id="area">
+        <button id="yes" type="button">Yes</button>
+        <button id="no" type="button" aria-hidden="true" tabindex="-1">No</button>
+      </div>
+
+      <p class="note">(Try clicking "no" if you dare…)</p>
+
+      <div id="result" class="video-wrap" aria-live="polite"></div>
+    </div>
+  </div>
+
+  <script>
+    (function(){
+      const noBtn = document.getElementById('no');
+      const yesBtn = document.getElementById('yes');
+      const result = document.getElementById('result');
+
+      // evasive "No" behavior (same as before)
+      function moveNoButton(){
+        const padding = 12;
+        const vw = window.innerWidth, vh = window.innerHeight;
+        const rect = noBtn.getBoundingClientRect();
+        const btnW = rect.width, btnH = rect.height;
+        const minX = padding, minY = padding;
+        const maxX = Math.max(padding, vw - btnW - padding);
+        const maxY = Math.max(padding, vh - btnH - padding);
+        const x = Math.floor(Math.random() * (maxX - minX + 1)) + minX;
+        const y = Math.floor(Math.random() * (maxY - minY + 1)) + minY;
+        noBtn.style.position = 'fixed';
+        noBtn.style.left = x + 'px';
+        noBtn.style.top = y + 'px';
+      }
+      ['mouseenter','mouseover','mousemove'].forEach(ev=>noBtn.addEventListener(ev, moveNoButton));
+      function blockAndMove(e){ e.preventDefault(); moveNoButton(); }
+      noBtn.addEventListener('mousedown', blockAndMove);
+      noBtn.addEventListener('touchstart', blockAndMove, {passive:false});
+      noBtn.addEventListener('click', e=>{ e.preventDefault(); moveNoButton(); });
+      noBtn.setAttribute('tabindex','-1');
+      setTimeout(moveNoButton, 300);
+      window.addEventListener('resize', () => {
+        const r = noBtn.getBoundingClientRect();
+        if (r.right > window.innerWidth - 8 || r.bottom > window.innerHeight - 8) moveNoButton();
+      });
+
+      // When yes is clicked, show the local video (must be at assets/video/dougie.mp4)
+      yesBtn.addEventListener('click', function(){
+        // Clear and insert video element
+        result.innerHTML = '';
+        const info = document.createElement('div');
+        info.textContent = 'Get ready to Dougie! 🎶';
+        info.style.fontWeight = '700';
+        result.appendChild(info);
+
+        // Video element referencing the file inside your repo
+        const vid = document.createElement('video');
+        vid.controls = true;
+        vid.autoplay = true;
+        vid.playsInline = true;
+        vid.loop = true;
+
+        // IMPORTANT: adjust this path to where you placed the file in the repo
+        const source = document.createElement('source');
+        source.src = '/assets/video/dougie.mp4';
+        source.type = 'video/mp4';
+
+        vid.appendChild(source);
+        result.appendChild(vid);
+
+        // attempt to play (user gesture should permit autoplay with sound in most browsers)
+        vid.play().catch((err) => {
+          // autoplay might be blocked — leave controls visible so user can press play.
+          console.warn('Autoplay blocked or failed:', err);
+        });
+      });
+    })();
+  </script>
+</body>
+</html>
